@@ -1,0 +1,737 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Venue Finder</title>
+    <style>
+        :root {
+            --primary-color: #4285f4;
+            --secondary-color: #34a853;
+            --error-color: #ea4335;
+            --light-gray: #f5f5f5;
+            --dark-gray: #333;
+            --medium-gray: #ddd;
+
+            /* Light theme colors */
+            --bg-color: #f9f9f9;
+            --text-color: #333;
+            --card-bg: white;
+            --input-bg: white;
+            --header-bg: #4285f4;
+            --chat-bg: #fefefe;
+            --message-user-bg: #4285f4;
+            --message-bot-bg: #f5f5f5;
+            --message-user-text: white;
+            --message-bot-text: #333;
+            --venue-type-bg: #f5f5f5;
+        }
+
+        .dark-mode {
+            /* Dark theme colors */
+            --bg-color: #121212;
+            --text-color: #e0e0e0;
+            --card-bg: #1e1e1e;
+            --input-bg: #2d2d2d;
+            --header-bg: #1a73e8;
+            --chat-bg: #1e1e1e;
+            --message-user-bg: #1a73e8;
+            --message-bot-bg: #2d2d2d;
+            --message-user-text: white;
+            --message-bot-text: #e0e0e0;
+            --venue-type-bg: #2d2d2d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .header {
+            background-color: var(--header-bg);
+            color: white;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        .header h1 {
+            font-size: 2.2em;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .theme-toggle {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+
+        .theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .theme-icon {
+            width: 16px;
+            height: 16px;
+        }
+
+        .chat-container {
+            max-width: 800px;
+            margin: 20px auto;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background-color: var(--chat-bg);
+        }
+
+        .welcome-message {
+            text-align: center;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .welcome-message h2 {
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+
+        .venue-types {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .venue-type {
+            background-color: var(--venue-type-bg);
+            padding: 10px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            display: flex;
+            animation: fadeIn 1s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateX(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .user-message {
+            justify-content: flex-end;
+        }
+
+        .bot-message {
+            justify-content: flex-start;
+        }
+
+        .message-content {
+            max-width: 75%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            line-height: 1.5;
+            position: relative;
+            word-wrap: break-word;
+        }
+
+        .user-message .message-content {
+            background: var(--message-user-bg);
+            color: var(--message-user-text);
+            border-bottom-right-radius: 5px;
+        }
+
+        .bot-message .message-content {
+            background: var(--message-bot-bg);
+            color: var(--message-bot-text);
+            border-bottom-left-radius: 5px;
+        }
+
+        .chat-input-container {
+            padding: 15px;
+            border-top: 1px solid var(--medium-gray);
+            background: var(--card-bg);
+            display: flex;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px 18px;
+            border: 1px solid var(--medium-gray);
+            border-radius: 25px;
+            outline: none;
+            font-size: 16px;
+            transition: border 0.3s;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+
+        .chat-input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .send-button {
+            margin-left: 12px;
+            padding: 12px 20px;
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .send-button:hover {
+            background: #3367d6;
+        }
+
+        .send-button:disabled {
+            background: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, .3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 8px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .venue-card {
+            border: 1px solid var(--medium-gray);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 12px 0;
+            background: var(--card-bg);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .venue-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .venue-card h3 {
+            margin-top: 0;
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .venue-card p {
+            margin: 6px 0;
+            color: var(--text-color);
+            opacity: 0.9;
+        }
+
+        .venue-card .rating {
+            display: inline-flex;
+            align-items: center;
+            color: #FF9529;
+            font-weight: bold;
+        }
+
+        .book-button {
+            background: var(--secondary-color);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 10px;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+
+        .book-button:hover {
+            background: #2d9249;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            background-color: rgba(234, 67, 53, 0.1);
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin: 5px 0;
+            font-size: 0.9em;
+        }
+
+        .typing-indicator {
+            display: flex;
+            padding: 10px 15px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-color);
+            border-radius: 50%;
+            margin: 0 3px;
+            animation: typingAnimation 1.4s infinite ease-in-out;
+            opacity: 0.6;
+        }
+
+        .typing-dot:nth-child(1) {
+            animation-delay: 0s;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typingAnimation {
+
+            0%,
+            60%,
+            100% {
+                transform: translateY(0);
+            }
+
+            30% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .chat-container {
+                margin: 0;
+                border-radius: 0;
+            }
+
+            .message-content {
+                max-width: 85%;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+                padding-right: 60px;
+            }
+
+            .theme-toggle {
+                top: 15px;
+                right: 10px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <button class="theme-toggle" id="theme-toggle">
+            <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+                <path
+                    d="M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36c-0.98,1.37-2.58,2.26-4.4,2.26 c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z" />
+            </svg>
+            Dark Mode
+        </button>
+        <h1>AI Venue Finder</h1>
+        <p>Find perfect venues for your events in real-time</p>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chat-messages">
+            <div class="welcome-message">
+                <h2>Hello! I'm your AI Venue Finder</h2>
+                <p>I can help you find perfect venues for:</p>
+                <div class="venue-types">
+                    <span class="venue-type">Sports events</span>
+                    <span class="venue-type">Personal meetings</span>
+                    <span class="venue-type">Business meetings</span>
+                    <span class="venue-type">Marriages</span>
+                    <span class="venue-type">Party events</span>
+                </div>
+                <p>Tell me what type of venue you're looking for and how many people will attend.</p>
+            </div>
+        </div>
+        <div class="chat-input-container">
+            <input type="text" class="chat-input" id="user-input" placeholder="Type your venue request..."
+                autocomplete="off">
+            <button class="send-button" id="send-button">
+                Send
+                <span class="loading-spinner" id="loading-spinner" style="display: none;"></span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        const themeToggle = document.getElementById('theme-toggle');
+        const themeIcon = themeToggle.querySelector('.theme-icon');
+
+        // Check for saved theme preference or use preferred color scheme
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            document.body.classList.add('dark-mode');
+            themeToggle.innerHTML = `
+                <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0 c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2 c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1 C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06 c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41 l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41 c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36 c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"/>
+                </svg>
+                Light Mode
+            `;
+        }
+
+        themeToggle.addEventListener('click', () => {
+            document.body.classList.toggle('dark-mode');
+
+            if (document.body.classList.contains('dark-mode')) {
+                localStorage.setItem('theme', 'dark');
+                themeToggle.innerHTML = `
+                    <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,7c-2.76,0-5,2.24-5,5s2.24,5,5,5s5-2.24,5-5S14.76,7,12,7L12,7z M2,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0 c-0.55,0-1,0.45-1,1S1.45,13,2,13z M20,13l2,0c0.55,0,1-0.45,1-1s-0.45-1-1-1l-2,0c-0.55,0-1,0.45-1,1S19.45,13,20,13z M11,2v2 c0,0.55,0.45,1,1,1s1-0.45,1-1V2c0-0.55-0.45-1-1-1S11,1.45,11,2z M11,20v2c0,0.55,0.45,1,1,1s1-0.45,1-1v-2c0-0.55-0.45-1-1-1 C11.45,19,11,19.45,11,20z M5.99,4.58c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41l1.06,1.06 c0.39,0.39,1.03,0.39,1.41,0s0.39-1.03,0-1.41L5.99,4.58z M18.36,16.95c-0.39-0.39-1.03-0.39-1.41,0c-0.39,0.39-0.39,1.03,0,1.41 l1.06,1.06c0.39,0.39,1.03,0.39,1.41,0c0.39-0.39,0.39-1.03,0-1.41L18.36,16.95z M19.42,5.99c0.39-0.39,0.39-1.03,0-1.41 c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L19.42,5.99z M7.05,18.36 c0.39-0.39,0.39-1.03,0-1.41c-0.39-0.39-1.03-0.39-1.41,0l-1.06,1.06c-0.39,0.39-0.39,1.03,0,1.41s1.03,0.39,1.41,0L7.05,18.36z"/>
+                    </svg>
+                    Light Mode
+                `;
+            } else {
+                localStorage.setItem('theme', 'light');
+                themeToggle.innerHTML = `
+                    <svg class="theme-icon" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12,3c-4.97,0-9,4.03-9,9s4.03,9,9,9s9-4.03,9-9c0-0.46-0.04-0.92-0.1-1.36c-0.98,1.37-2.58,2.26-4.4,2.26 c-2.98,0-5.4-2.42-5.4-5.4c0-1.81,0.89-3.42,2.26-4.4C12.92,3.04,12.46,3,12,3L12,3z"/>
+                    </svg>
+                    Dark Mode
+                `;
+            }
+        });
+
+        // [Keep all the original JavaScript code exactly the same]
+        document.addEventListener('DOMContentLoaded', function () {
+            const chatMessages = document.getElementById('chat-messages');
+            const userInput = document.getElementById('user-input');
+            const sendButton = document.getElementById('send-button');
+            const loadingSpinner = document.getElementById('loading-spinner');
+
+            let conversationHistory = [
+                {
+                    role: 'assistant',
+                    content: 'Hello! I\'m your AI Venue Finder. I can help you find perfect venues for sports events, personal meetings, business meetings, marriages, and party events. Tell me what type of venue you\'re looking for and how many people will attend.'
+                }
+            ];
+
+            // Add typing indicator
+            function showTypingIndicator() {
+                const typingDiv = document.createElement('div');
+                typingDiv.className = 'message bot-message typing-indicator';
+                typingDiv.id = 'typing-indicator';
+
+                typingDiv.innerHTML = `
+                    <div class="message-content" style="padding: 8px 12px;">
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                        <div class="typing-dot"></div>
+                    </div>
+                `;
+
+                chatMessages.appendChild(typingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+
+            // Remove typing indicator
+            function hideTypingIndicator() {
+                const typingIndicator = document.getElementById('typing-indicator');
+                if (typingIndicator) {
+                    typingIndicator.remove();
+                }
+            }
+
+            // Add message to chat
+            function addMessage(role, content) {
+                hideTypingIndicator();
+
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${role}-message`;
+
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'message-content';
+
+                if (typeof content === 'object') {
+                    if (content.error) {
+                        // Error message
+                        contentDiv.innerHTML = `
+                            <div class="error-message">
+                                <strong>Error:</strong> ${content.error}
+                            </div>
+                            <p>${content.suggestion || 'Please try again later.'}</p>
+                        `;
+                    } else if (content.venues) {
+                        // Venue results
+                        let html = content.response || 'Here are some venues I found:';
+
+                        if (content.venues.length === 0) {
+                            html += '<p>No venues found matching your criteria. Try adjusting your search.</p>';
+                        } else {
+                            content.venues.forEach(venue => {
+                                const address = venue.location?.formatted_address || 'Address not available';
+                                const rating = venue.rating ? `${venue.rating}/10` : 'No rating';
+                                const price = venue.price ? '$'.repeat(Math.min(venue.price, 4)) : 'Price not specified';
+
+                                html += `
+                                    <div class="venue-card">
+                                        ${venue.photo ?
+                                        `<img src="${venue.photo}" alt="${venue.name}" class="venue-image">` :
+                                        '<div class="no-image">No Image Available</div>'}
+                                        <h3>${venue.name}</h3>
+                                        <p>📍 ${address}</p>
+                                        <p class="rating">⭐ ${rating}</p>
+                                        
+                                        <p>💰 ${venue.price ? '$'.repeat(venue.price) : 'Price not specified'}</p>
+                                            ${venue.categories.length ?
+                                        `<p>🏷️ ${venue.categories.join(', ')}</p>` : ''}
+                                        <button class="book-button" data-venue-id="${venue.fsq_id}">
+                                            Book this venue
+                                        </button>
+                                    </div>
+                                `;
+                            });
+                        }
+
+                        contentDiv.innerHTML = html;
+
+                        // Add event listeners to booking buttons
+                        setTimeout(() => {
+                            document.querySelectorAll('.book-button').forEach(button => {
+                                button.addEventListener('click', function () {
+                                    const venueId = this.getAttribute('data-venue-id');
+                                    bookVenue(venueId);
+                                });
+                            });
+                        }, 100);
+                    } else {
+                        // Regular message from object
+                        contentDiv.textContent = content.response || content.message || 'I have some information for you.';
+                    }
+                } else {
+                    // Regular text message
+                    contentDiv.textContent = content;
+                }
+
+                messageDiv.appendChild(contentDiv);
+                chatMessages.appendChild(messageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+
+                // Add to conversation history
+                conversationHistory.push({
+                    role: role,
+                    content: typeof content === 'string' ? content : content.response || JSON.stringify(content)
+                });
+            }
+
+            // Book venue function
+            function bookVenue(venueId) {
+                addMessage('assistant', {
+                    response: `Your booking request for venue (ID: ${venueId}) has been received.`,
+                    details: 'Our team will contact you shortly to confirm the reservation.'
+                });
+
+                // In a real app, you would send this to your backend
+                console.log(`Booking venue with ID: ${venueId}`);
+            }
+
+            // Extract location from message
+            function extractLocation(message) {
+                const locationPattern = /(?:in|near|at|around)\s+([a-zA-Z\s]+?)(?:\s|$|,|\.)/i;
+                const match = message.match(locationPattern);
+                return match ? match[1].trim() : null;
+            }
+
+            // Extract query from message
+            function extractQuery(message) {
+                const queryPattern = /(?:find|search|show|look for)\s+([a-zA-Z\s]+?)(?:\s|$|,|\.|in|near)/i;
+                const match = message.match(queryPattern);
+                return match ? match[1].trim() : null;
+            }
+
+            // Extract budget from message
+            function extractBudget(message) {
+                const budgetPattern = /(?:under|below|less than|around|about)\s+(\$?[0-9,]+)/i;
+                const match = message.match(budgetPattern);
+                return match ? parseInt(match[1].replace(/\D/g, '')) : null;
+            }
+
+            // Send message to backend
+            async function sendMessage() {
+                const message = userInput.value.trim();
+                if (!message) return;
+
+                // Add user message to chat
+                addMessage('user', message);
+                userInput.value = '';
+                userInput.disabled = true;
+                sendButton.disabled = true;
+                loadingSpinner.style.display = 'inline-block';
+
+                // Show typing indicator while waiting for response
+                showTypingIndicator();
+
+                try {
+                    // First determine if this is a venue search request
+                    const isSearchRequest = /find|search|show|look for|venue|place|space/i.test(message);
+
+                    if (isSearchRequest) {
+                        // Prepare search parameters
+                        const location = extractLocation(message) || 'New York';
+                        const query = extractQuery(message) || 'venue';
+                        const budget = extractBudget(message);
+
+                        // Show a temporary message while searching
+                        addMessage('assistant', `Searching for ${query} in ${location}...`);
+
+                        // Call both APIs in parallel
+                        const [aiResponse, venueResponse] = await Promise.all([
+                            fetch('/api/chat', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    message: `User is looking for ${query} in ${location}. 
+                                              ${budget ? `Budget is under $${budget}.` : ''}
+                                              Give a friendly response presenting the venues.`,
+                                    history: conversationHistory
+                                })
+                            }),
+                            fetch('/api/search-venues', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
+                                    location: location,
+                                    query: query,
+                                    budget: budget
+                                })
+                            })
+                        ]);
+
+                        const aiData = await aiResponse.json();
+                        const venueData = await venueResponse.json();
+
+                        if (!aiData.success || !venueData.success) {
+                            throw new Error(aiData.error || venueData.error || 'Failed to get venue information');
+                        }
+
+                        // Combine AI response with venue data
+                        addMessage('assistant', {
+                            response: aiData.response,
+                            venues: venueData.venues
+                        });
+                    } else {
+                        // Regular conversation - use only the AI
+                        const response = await fetch('/api/chat', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                message: message,
+                                history: conversationHistory
+                            })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            addMessage('assistant', data.response);
+                        } else {
+                            throw new Error(data.error || 'Failed to get AI response');
+                        }
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    addMessage('assistant', {
+                        error: error.message,
+                        suggestion: 'You can try rephrasing your request or check back later.'
+                    });
+                } finally {
+                    // Reset UI
+                    userInput.disabled = false;
+                    sendButton.disabled = false;
+                    loadingSpinner.style.display = 'none';
+                    userInput.focus();
+                }
+            }
+
+            // Event listeners
+            sendButton.addEventListener('click', sendMessage);
+            userInput.addEventListener('keypress', function (e) {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
+            });
+
+            // Focus input on page load
+            userInput.focus();
+        });
+    </script>
+</body>
+
+</html>
